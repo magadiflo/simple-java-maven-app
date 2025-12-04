@@ -4,19 +4,18 @@ pipeline {
         gitcommit = "${gitcommit}"
     }
     tools {
-        maven 'mavenjenkins'
+        maven 'Maven en Jenkins'
     }
 
     stages {
-
         stage('Verificación SCM') {
-          steps {
-            script {
-              checkout scm
-              sh "git rev-parse --short HEAD > .git/commit-id"  
-              gitcommit = readFile('.git/commit-id').trim()
+            steps {
+                script {
+                    checkout scm
+                    sh "git rev-parse --short HEAD > .git/commit-id"
+                    gitcommit = readFile('.git/commit-id').trim()
+                }
             }
-          }  
         }
         stage('Build') {
             steps {
@@ -26,7 +25,7 @@ pipeline {
                 success {
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
-            }    
+            }
         }
         stage('Test') {
             steps {
@@ -39,14 +38,14 @@ pipeline {
             }
         }
         stage('Docker Build & Push') {
-          steps {
-            script {  
-              docker.withRegistry('https://registry.hub.docker.com', 'docker-hub') {
-                def appmavenjenkins = docker.build("macloujulian/mavenjenkins:${gitcommit}", ".")
-                appmavenjenkins.push()
-              }
-            }  
-          }  
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub') {
+                        def appmavenjenkins = docker.build("magadiflo/maven-jenkins:${gitcommit}", ".")
+                        appmavenjenkins.push()
+                    }
+                }
+            }
         }
         stage('Deploy') {
             steps {
@@ -55,7 +54,7 @@ pipeline {
         }
     }
     post {
-        success { 
+        success {
             slackSend message: "Build Started - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
         }
         failure {
@@ -63,6 +62,6 @@ pipeline {
         }
         always {
             slackSend message: "Build Started - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
-        }    
+        }
     }
 }
